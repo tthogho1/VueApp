@@ -5,6 +5,7 @@ export const FirebaseApp: firebase.app.App = firebase.initializeApp(credentials.
 
 import "firebase/compat/messaging";
 import "firebase/compat/firestore";
+import { collection } from "firebase/firestore";
 
 export const messaging = firebase.messaging();
 
@@ -16,3 +17,5 @@ const db = firebase.firestore();
 const dbNme = "sample-app";
 
 export const usersRef = db.collection(dbNme);
+// for query --- fix later  integrate to usersRef
+export const usersQuery = collection(db,"sample-app");

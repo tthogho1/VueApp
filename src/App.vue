@@ -1,9 +1,7 @@
 <template>
   <header>
     <div class="wrapper">
-      <nav>
-        <RouterLink to="/map">Map</RouterLink>
-      </nav>
+        <!-- RouterLink to="/map">Map</RouterLink -->
     </div>
   </header>
 
@@ -11,6 +9,7 @@
 </template>
 
 <script setup lang="ts">
+
 
 </script>
 

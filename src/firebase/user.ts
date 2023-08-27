@@ -1,10 +1,10 @@
-import { messaging , usersRef } from "@/firebase/app";
+import { messaging , usersRef ,usersQuery} from "@/firebase/app";
 import { credentials } from "@/firebase/credentials";
 import type { user } from "@/firebase/types/usertype";
 
-import { useUserStore } from '../stores/user';
+import { loginUserStore } from '../stores/user';
 import type { Router } from 'vue-router'
-import { query, where, getDocs, QuerySnapshot } from "firebase/firestore";
+import { query, where, getDocs } from "firebase/firestore";
 
 export const login  = async (username :string,router:Router,transition:string)  => {
 
@@ -17,17 +17,13 @@ export const login  = async (username :string,router:Router,transition:string)  
             navigator.geolocation.getCurrentPosition(
                 // success callback
                 function(position) {
-                    usersRef.add({token: token,
-                                username : username,
-                                location:{ lat: position.coords.latitude,
-                                            lng: position.coords.longitude},
-                                subscribe:true});
-                    const user:user = {name :username,
-                            location:{ lat: position.coords.latitude,
-                                        lng: position.coords.longitude}} ;
-
-                    const userStore = useUserStore();
-                    userStore.setUser(user);
+                    const user :user = {name :username,
+                                        location:{ lat: position.coords.latitude,
+                                                    lng: position.coords.longitude},
+                                        token:token,
+                                        subscribe:true};
+                    usersRef.add(user);
+                    loginUserStore().setUser(user);
 
                     router.push(transition);
                 },
@@ -46,22 +42,59 @@ export const login  = async (username :string,router:Router,transition:string)  
     }
 }
 
-export const getUsers  = async (map:any):Promise<QuerySnapshot>  => {
+export const getUserToken = async (username:string):Promise<string> =>{
+    const q = query(usersQuery,
+        where("name", "==", username)
+    );
+
+    const snapshot = await getDocs(q);
+    const dataArray = snapshot.docs.map(doc=>doc.data() as user)
+
+    return dataArray[0].token;
+}
+
+
+export const getOtherUsersOnMap  = async (map:any,myname:string):Promise<user[]>  => {
     const latlngBound = map.getBounds();
     const latlngNE = latlngBound.getNorthEast();
     const latlngSW = latlngBound.getSouthWest();    
     
     const latitude_gte = latlngSW.lat(), latitude_lt = latlngNE.lat(), longitude_gte = latlngSW.lng(), longitude_lt = latlngNE.lng();
 
-    const q = query(usersRef,
-            where("location.lat", ">=", latitude_gte),
-            where("location.lat", "<", latitude_lt),
-            where("location.lng", ">=", longitude_gte),
-            where("location.lng", "<", longitude_lt)
-    )
+    const q = query(usersQuery,
+        where("location.lat", ">=", latitude_gte),
+        where("location.lat", "<", latitude_lt)
+    );
+
+    const snapshot = await getDocs(q);
+    const dataArray = snapshot.docs.map(doc=>doc.data() as user)
+
+    const result  = dataArray.filter(doc=> doc.location.lng >= longitude_gte 
+                                    && doc.location.lng < longitude_lt
+                                    && doc.name !== myname);
+
+    return result;
+}
+
+
+export const getOtherUsersOnMapByListener  = async (map:any,myname:string) => {
+    const latlngBound = map.getBounds();
+    const latlngNE = latlngBound.getNorthEast();
+    const latlngSW = latlngBound.getSouthWest();    
     
-    const snapshot = await  getDocs(q);
+    const latitude_gte = latlngSW.lat(), latitude_lt = latlngNE.lat(), longitude_gte = latlngSW.lng(), longitude_lt = latlngNE.lng();
 
-    return snapshot;
-
+    usersRef.where('name','!=',myname)
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach(change=>{
+                if (change.type === 'added'){
+                    const user :user = change.doc.data() as user;
+                    if (user.location.lat >= latitude_gte && user.location.lat < latitude_lt
+                        && user.location.lng >= longitude_gte 
+                        && user.location.lng < longitude_lt){
+                            console.log(user);
+                    }
+                }
+            })
+        })
 }

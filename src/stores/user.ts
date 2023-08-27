@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type {user} from '../firebase/types/usertype'
 
-export const useUserStore = defineStore('user', () => {
+export const loginUserStore = defineStore('user', () => {
 
   const user = ref({} as user) ;
   

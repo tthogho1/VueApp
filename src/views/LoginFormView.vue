@@ -33,8 +33,12 @@ const username= ref("");
 const router = useRouter();
 
 const userLogin = async function(){
-    
-    login(username.value, router , 'map');
+
+    try {
+        login(username.value, router , 'map');
+    } catch (error) {
+        alert(`login error ${error}`);
+    }
 
 }
 </script>

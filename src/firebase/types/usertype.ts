@@ -6,4 +6,6 @@ export type location = {
 export type user = {
     name: string;
     location: location;
+    token:string;
+    subscribe:boolean;   
 }
